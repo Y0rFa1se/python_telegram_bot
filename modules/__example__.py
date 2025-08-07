@@ -1,5 +1,5 @@
-from __apis__ import *
-from __decorators__ import command, callback
+from modules.__apis__ import *
+from modules.__decorators__ import command, callback
 
 from telegram import Update
 
