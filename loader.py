@@ -41,7 +41,7 @@ def load_modules(app: Application):
                 for func_name in func_names:
                     func = getattr(module, func_name)
 
-                    app.add_handler(CommandHandler(*func))
+                    app.add_handler(CommandHandler(func.command, func))
 
             elif decorator_name == "callback":
                 for func_name in func_names:

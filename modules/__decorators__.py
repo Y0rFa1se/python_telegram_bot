@@ -6,8 +6,10 @@ def command(cmd):
         async def wrapper(update: Update, context: ContextTypes.DEFAULT_TYPE):
             result = await func(update)
             return result
+        
+        wrapper.command = cmd
         return wrapper
-    return (cmd, decorator)
+    return decorator
     
 def callback(callback_data):
     def decorator(func):
