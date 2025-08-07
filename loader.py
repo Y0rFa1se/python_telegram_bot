@@ -4,7 +4,6 @@ import inspect
 
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler
 
-
 def load_modules(app: Application):
     for py_file in Path("modules").glob("*.py"):
         module_name = py_file.stem
@@ -15,26 +14,29 @@ def load_modules(app: Application):
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
 
-        functions = [name for name, obj in inspect.getmembers(module) if inspect.isfunction(obj) and not name.startswith("_")]
+        functions = []
+        for name, obj in inspect.getmembers(module):
+            if inspect.isfunction(obj) and not name.startswith("_"):
+                functions.append(name)
 
         decorator_groups = {"command": [], "callback": []}
 
         for func_name in functions:
             func = getattr(module, func_name)
 
-            if hasattr(func, "__wrapped__"):
-                decorator_name = func.__name__ if hasattr(func, "__name__") else "unknown"
-                original_func = func
-                while hasattr(original_func, "__wrapped__"):
-                    original_func = original_func.__wrapped__
-                decorator_name = original_func.__name__
+            if hasattr(func, "decorator"):
+                decorator_name = func.decorator
             else:
-                raise ValueError(f"No decorator found for function {func_name} in module {module_name}")
+                print(f"Function {func_name} in module {module_name} does not have a recognized decorator.")
+                continue
 
             if decorator_name not in decorator_groups:
-                raise ValueError(f"Decorator {decorator_name} not recognized in module {module_name}")
+                print(f"Decorator {decorator_name} not recognized in module {module_name}")
+                continue
 
             decorator_groups[decorator_name].append(func_name)
+
+        print(decorator_groups)
             
         for decorator_name, func_names in decorator_groups.items():
             if decorator_name == "command":
@@ -42,9 +44,11 @@ def load_modules(app: Application):
                     func = getattr(module, func_name)
 
                     app.add_handler(CommandHandler(func.command, func))
+                    print(f"Command handler for {func.command} added from module {module_name}")
 
             elif decorator_name == "callback":
                 for func_name in func_names:
                     func = getattr(module, func_name)
 
                     app.add_handler(CallbackQueryHandler(func))
+                    print(f"Callback handler for {func.callback_data} added from module {module_name}")

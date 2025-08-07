@@ -8,6 +8,7 @@ def command(cmd):
             return result
         
         wrapper.command = cmd
+        wrapper.decorator = "command"
         return wrapper
     return decorator
     
@@ -24,5 +25,6 @@ def callback(callback_data):
             else:
                 await query.edit_message_text("‼️잘못된 요청입니다‼️")
 
+        wrapper.decorator = "callback"
         return wrapper
     return decorator
