@@ -24,17 +24,11 @@ def callback(callback_data):
 
             result = None
             if str(query.message.chat.id).strip() == os.getenv("CHAT_ID"):
-                await query.answer()
-
-                if query.data == callback_data:
-                    result = await func(update)
-                    return result
-                
-                else:
-                    await query.edit_message_text("‼️잘못된 요청입니다‼️")
+                result = await func(update)
 
             return result
 
+        wrapper.callback_data = callback_data
         wrapper.decorator = "callback"
         return wrapper
     return decorator

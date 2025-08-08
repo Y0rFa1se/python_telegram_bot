@@ -27,11 +27,9 @@ def load_modules(app: Application):
             if hasattr(func, "decorator"):
                 decorator_name = func.decorator
             else:
-                print(f"Function {func_name} in module {module_name} does not have a recognized decorator.")
                 continue
 
             if decorator_name not in decorator_groups:
-                print(f"Decorator {decorator_name} not recognized in module {module_name}")
                 continue
 
             decorator_groups[decorator_name].append(func_name)
@@ -50,5 +48,5 @@ def load_modules(app: Application):
                 for func_name in func_names:
                     func = getattr(module, func_name)
 
-                    app.add_handler(CallbackQueryHandler(func))
+                    app.add_handler(CallbackQueryHandler(func, pattern=f"^{func.callback_data}$"))
                     print(f"Callback handler for {func.callback_data} added from module {module_name}")

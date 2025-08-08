@@ -1,61 +1,106 @@
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import ContextTypes
+from telegram import Update, Message, InlineKeyboardButton, InlineKeyboardMarkup
 
-async def send_text(update: Update, context: ContextTypes.DEFAULT_TYPE, text: str):
-    await update.message.reply_text(text)
+class APP_SESSION:
+    pass
 
-async def delete_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.delete()
-
-async def edit_text(update: Update, context: ContextTypes.DEFAULT_TYPE, new_text: str):
-    query = update.callback_query
-    await query.answer()
-    await query.edit_message_text(new_text)
-
-async def send_file(update: Update, context: ContextTypes.DEFAULT_TYPE, file_path: str, file_name: str):
-    await update.message.reply_document(document=open(file_path, "rb"), filename=file_name)
-
-async def send_image(update: Update, context: ContextTypes.DEFAULT_TYPE, image_url: str):
-    await update.message.reply_photo(photo=image_url)
-
-async def send_video(update: Update, context: ContextTypes.DEFAULT_TYPE, video_url: str):
-    await update.message.reply_video(video=video_url)
-
-async def send_audio(update: Update, context: ContextTypes.DEFAULT_TYPE, audio_url: str):
-    await update.message.reply_audio(audio=audio_url)
-
-async def get_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> str | None:
-    text = update.message.text
-    if text:
-        return text
-    else:
-        return None
-
-async def get_file(update: Update, context: ContextTypes.DEFAULT_TYPE) -> str | None:
-    file = update.message.document
-    if file:
-        file_path = await file.get_file().download()
-        return file_path
-    
-    else:
-        return None
-    
-async def send_inline_keyboard(update: Update, context: ContextTypes.DEFAULT_TYPE, text: str, keys: dict[str, str]):
+def markup_keyboard(keys: dict[str, str]) -> InlineKeyboardMarkup:
     keyboard = []
 
-    for callback, keyword in keys.items():
-        keyboard.append([InlineKeyboardButton(keyword, callback_data=callback)])
+    for row in keys:
+        keyboard_tmp = []
+        for button_text, callback_data in row:
+            keyboard_tmp.append(InlineKeyboardButton(button_text, callback_data=callback_data))
+        keyboard.append(keyboard_tmp)
 
-    await update.message.reply_text(text, reply_markup=InlineKeyboardMarkup(keyboard))
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    return reply_markup
 
-async def inline_keyboard_callback(update: Update, context: ContextTypes.DEFAULT_TYPE, pattern: str, func, error_message: str = "Unknown pattern."):
-    query = update.callback_query
-    await query.answer()
+async def is_last_message(update: Update) -> bool:
+    return update.message is not None
 
-    if query.data == pattern:
-        await func(query, context)
-        return True
-        
-    else:
-        await edit_text(update, context, error_message)
-        return False
+async def is_last_callback(update: Update) -> bool:
+    return update.callback_query is not None
+
+async def send_message(update: Update, text: str) -> Message:
+    if await is_last_callback(update):
+        return await update.callback_query.message.reply_text(text)
+    elif await is_last_message(update):
+        return await update.message.reply_text(text)
+
+async def delete_query_message(update: Update):
+    await update.message.delete()
+
+async def delete_message(message: Message):
+    await message.delete()
+
+async def edit_message(message: Message, text: str):
+    await message.edit_text(text)
+
+async def send_file(update: Update, file_path: str, file_name: str):
+    try:
+        with open(file_path, "rb") as file:
+            await update.message.reply_document(file, filename=file_name)
+    except FileNotFoundError:
+        await send_message(update, "File not found.")
+    except Exception as e:
+        await send_message(update, f"Error: {e}")
+
+async def send_image(update: Update, image_url: str):
+    if await is_last_callback(update):
+        await update.callback_query.message.reply_photo(photo=image_url)
+    elif await is_last_message(update):
+        await update.message.reply_photo(photo=image_url)
+
+async def send_video(update: Update, video_url: str):
+    if await is_last_callback(update):
+        await update.callback_query.message.reply_video(video=video_url)
+    elif await is_last_message(update):
+        await update.message.reply_video(video=video_url)
+
+async def send_audio(update: Update, audio_url: str):
+    if await is_last_callback(update):
+        await update.callback_query.message.reply_audio(audio=audio_url)
+    elif await is_last_message(update):
+        await update.message.reply_audio(audio=audio_url)
+
+async def get_last_message(update: Update) -> str | None:
+    try:
+        return update.message.text
+    except AttributeError:
+        return None
+
+async def get_last_callback(update: Update) -> str | None:
+    try:
+        return update.callback_query.data
+    except AttributeError:
+        return None
+
+async def get_last_file(update: Update) -> str | None:
+    try:
+        return await update.message.document.get_file().download()
+    except AttributeError:
+        return None
+    
+async def send_inline_keyboard(update: Update, text: str, keys: dict[str, str]):
+    """
+    keys = [
+        [("button_text", "callback_data")],
+        [("button_text_2", "callback_data_2"), ("button_text_3", "callback_data_3")]
+    ]
+    """
+    reply_markup = markup_keyboard(keys)
+
+    if await is_last_callback(update):
+        await update.callback_query.message.reply_text(text, reply_markup=reply_markup)
+    elif await is_last_message(update):
+        await update.message.reply_text(text, reply_markup=reply_markup)
+
+async def edit_inline_keyboard(update: Update, text: str, keys: dict[str, str]):
+    """
+    keys = [
+        [("button_text", "callback_data")],
+        [("button_text_2", "callback_data_2"), ("button_text_3", "callback_data_3")]
+    ]
+    """
+    reply_markup = markup_keyboard(keys)
+    await update.callback_query.message.edit_text(text, reply_markup=reply_markup)
