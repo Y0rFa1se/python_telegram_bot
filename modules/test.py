@@ -8,6 +8,18 @@ async def test_command(update: Update):
     print("Test command executed")
     await send_message(update, "Test")
 
+@command("test_save")
+async def test_save(update: Update):
+    msg = await get_last_message(update)
+    print(msg)
+    APP_SESSION.test_data = msg
+
+@command("test_get")
+async def test_get(update: Update):
+    msg = APP_SESSION.test_data
+    print(msg)
+    await send_message(update, f"Saved data: {msg}")
+
 @command("test_keyboard")
 async def test_keyboard(update: Update):
     keys = [

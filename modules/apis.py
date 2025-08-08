@@ -1,7 +1,8 @@
 from telegram import Update, Message, InlineKeyboardButton, InlineKeyboardMarkup
 
 class APP_SESSION:
-    pass
+    def __init__(self):
+        self.data = dict()
 
 def markup_keyboard(keys: dict[str, str]) -> InlineKeyboardMarkup:
     keyboard = []
@@ -65,7 +66,13 @@ async def send_audio(update: Update, audio_url: str):
 
 async def get_last_message(update: Update) -> str | None:
     try:
-        return update.message.text
+        query = update.message.text.split()
+        text = ""
+        for word in query[1:]:
+            text += word + " "
+
+        return text[:-1] if text else None
+
     except AttributeError:
         return None
 
