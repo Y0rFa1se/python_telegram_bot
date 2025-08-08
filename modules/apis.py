@@ -2,6 +2,7 @@ from telegram import Update, Message, InlineKeyboardButton, InlineKeyboardMarkup
 
 class APP_SESSION:
     def __init__(self):
+        self.default_keys = []
         self.data = dict()
 
 def markup_keyboard(keys: dict[str, str]) -> InlineKeyboardMarkup:
